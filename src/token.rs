@@ -7,5 +7,12 @@ pub enum Token {
     Extern,
     Identifier(String),
     Number(f32),
+    Add,
+    Sub,
+    Mult,
+    Div,
+    Eq,
+    LParen,
+    RParen,
     Misc(char)
 }

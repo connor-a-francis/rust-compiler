@@ -47,7 +47,20 @@ impl Lexer {
         } else {
             let current_char = self.get_current();
             self.move_read_head();
-            Token::Misc(current_char)
+            self.get_symbol(current_char)
+        }
+    }
+
+    fn get_symbol(&self, c: char) -> Token {
+        match c {
+            '+' => Token::Add,
+            '-' => Token::Sub,
+            '*' => Token::Mult,
+            '/' => Token::Div,
+            '(' => Token::LParen,
+            ')' => Token::RParen,
+            '=' => Token::Eq,
+            _ => Token::Misc(c),
         }
     }
 
@@ -131,8 +144,8 @@ mod lexer_tests {
         let expected = vec![
             Token::Def,
             Token::Identifier("hello".to_string()),
-            Token::Misc('('),
-            Token::Misc(')'),
+            Token::LParen,
+            Token::RParen,
             Token::Eof,
         ];
         assert_eq!(result, expected)
@@ -168,9 +181,40 @@ mod lexer_tests {
             Token::Identifier("hello".to_string()),
             Token::Def,
             Token::Identifier("goodbye".to_string()),
-            Token::Misc('('),
-            Token::Misc(')'),
+            Token::LParen,
+            Token::RParen,
             Token::Eof,
+        ];
+        assert_eq!(result, expected)
+    }
+    #[test]
+    fn lexer_reads_math() {
+        let program: Vec<char> = r###"
+            a=(b+c)-d*e/(f+$)
+        "###
+        .chars()
+        .collect();
+
+        let result = Lexer::new(program).get_tokens();
+        let expected = vec![
+            Token::Identifier('a'.to_string()),
+            Token::Eq,
+            Token::LParen,
+            Token::Identifier('b'.to_string()),
+            Token::Add,
+            Token::Identifier('c'.to_string()),
+            Token::RParen,
+            Token::Sub,
+            Token::Identifier('d'.to_string()),
+            Token::Mult,
+            Token::Identifier('e'.to_string()),
+            Token::Div,
+            Token::LParen,
+            Token::Identifier('f'.to_string()),
+            Token::Add,
+            Token::Misc('$'),
+            Token::RParen,
+            Token::Eof
         ];
         assert_eq!(result, expected)
     }
@@ -186,12 +230,12 @@ mod lexer_tests {
         let expected = vec![
             Token::Def,
             Token::Identifier("hello".to_string()),
-            Token::Misc('('),
-            Token::Misc(')'),
+            Token::LParen,
+            Token::RParen,
             Token::Identifier("a".to_string()),
-            Token::Misc('='),
+            Token::Eq,
             Token::Identifier("b".to_string()),
-            Token::Misc('+'),
+            Token::Add,
             Token::Identifier("c".to_string()),
             Token::Eof,
         ];
@@ -210,12 +254,12 @@ mod lexer_tests {
         let expected = vec![
             Token::Def,
             Token::Identifier("hello".to_string()),
-            Token::Misc('('),
-            Token::Misc(')'),
+            Token::LParen,
+            Token::RParen,
             Token::Identifier("a".to_string()),
-            Token::Misc('='),
+            Token::Eq,
             Token::Number(45f32),
-            Token::Misc('+'),
+            Token::Add,
             Token::Number(69.2),
             Token::Eof,
         ];
@@ -232,6 +276,4 @@ mod lexer_tests {
         .collect();
         let _ = Lexer::new(program).get_tokens();
     }
-
-
 }
