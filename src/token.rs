@@ -1,3 +1,6 @@
+#[derive(Debug)]
+#[derive(Clone)]
+#[derive(PartialEq)]
 pub enum Token {
     Eof,
     Def,

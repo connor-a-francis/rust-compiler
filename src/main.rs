@@ -3,6 +3,6 @@ mod token;
 
 use lexer::Lexer;
 fn main() {
-    println!("Hello, world!");
-    let _lexer = Lexer::new();
+    println!("\u{5B8C}");
+    // let _lexer = Lexer::new();
 }
