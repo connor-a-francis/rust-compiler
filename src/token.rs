@@ -1,11 +1,22 @@
-#[derive(Debug)]
-#[derive(Clone)]
-#[derive(PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
-    Eof,
+    EOF,
+    EOL,
     Def,
+    Let,
     Extern,
+    Return,
     Identifier(String),
     Number(f32),
-    Misc(char)
+    Add,
+    Sub,
+    Mult,
+    Div,
+    Eq,
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    Misc(char),
 }
+

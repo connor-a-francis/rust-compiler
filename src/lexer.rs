@@ -20,12 +20,12 @@ impl Lexer {
 
     fn get_tokens(&mut self) -> Vec<Token> {
         if self.char_vec.len() == 0 {
-            return vec![Token::Eof];
+            return vec![Token::EOF];
         }
         loop {
             let token = self.get_tok();
             self.tokens.push(token.clone());
-            if token == Token::Eof {
+            if token == Token::EOF {
                 break;
             }
         }
@@ -36,7 +36,7 @@ impl Lexer {
         self.skip_whitespace();
 
         if self.get_current() == self::EOF {
-            Token::Eof
+            Token::EOF
         } else if self.get_current().is_numeric() || self.get_current() == '.' {
             self.get_number()
         } else if self.get_current() == '#' {
@@ -47,7 +47,23 @@ impl Lexer {
         } else {
             let current_char = self.get_current();
             self.move_read_head();
-            Token::Misc(current_char)
+            self.get_symbol(current_char)
+        }
+    }
+
+    fn get_symbol(&self, c: char) -> Token {
+        match c {
+            '+' => Token::Add,
+            '-' => Token::Sub,
+            '*' => Token::Mult,
+            '/' => Token::Div,
+            '(' => Token::LParen,
+            ')' => Token::RParen,
+            '{' => Token::LBrace,
+            '}' => Token::RBrace,
+            '=' => Token::Eq,
+            ';' => Token::EOL,
+            _ => Token::Misc(c),
         }
     }
 
@@ -60,8 +76,10 @@ impl Lexer {
         }
 
         match identifier_string.as_str() {
+            "let" => Token::Let,
             "def" => Token::Def,
             "extern" => Token::Extern,
+            "return" => Token::Return,
             _ => Token::Identifier(identifier_string),
         }
     }
@@ -113,17 +131,17 @@ mod lexer_tests {
     #[test]
     fn lexer_reads_eof() {
         let result = Lexer::new("".chars().collect()).get_tokens();
-        assert_eq!(result, vec![Token::Eof])
+        assert_eq!(result, vec![Token::EOF])
     }
     #[test]
     fn lexer_reads_space_eof() {
         let result = Lexer::new(" ".chars().collect()).get_tokens();
-        assert_eq!(result, vec![Token::Eof])
+        assert_eq!(result, vec![Token::EOF])
     }
     #[test]
     fn lexer_reads_def() {
         let program: Vec<char> = r###"
-            def hello()
+            def hello() {}
         "###
         .chars()
         .collect();
@@ -131,16 +149,18 @@ mod lexer_tests {
         let expected = vec![
             Token::Def,
             Token::Identifier("hello".to_string()),
-            Token::Misc('('),
-            Token::Misc(')'),
-            Token::Eof,
+            Token::LParen,
+            Token::RParen,
+            Token::LBrace,
+            Token::RBrace,
+            Token::EOF,
         ];
         assert_eq!(result, expected)
     }
     #[test]
     fn lexer_reads_extern() {
         let program: Vec<char> = r###"
-                extern hello
+            extern hello;
             "###
         .chars()
         .collect();
@@ -148,7 +168,8 @@ mod lexer_tests {
         let expected = vec![
             Token::Extern,
             Token::Identifier("hello".to_string()),
-            Token::Eof,
+            Token::EOL,
+            Token::EOF,
         ];
         assert_eq!(result, expected)
     }
@@ -156,9 +177,9 @@ mod lexer_tests {
     #[test]
     fn lexer_skips_comment() {
         let program: Vec<char> = r###"
-            extern hello
-            # skip me!
-            def goodbye()
+        extern hello
+        # skip me!
+        def goodbye() {}
         "###
         .chars()
         .collect();
@@ -168,17 +189,53 @@ mod lexer_tests {
             Token::Identifier("hello".to_string()),
             Token::Def,
             Token::Identifier("goodbye".to_string()),
-            Token::Misc('('),
-            Token::Misc(')'),
-            Token::Eof,
+            Token::LParen,
+            Token::RParen,
+            Token::LBrace,
+            Token::RBrace,
+            Token::EOF,
+        ];
+        assert_eq!(result, expected)
+    }
+    #[test]
+    fn lexer_reads_math() {
+        let program: Vec<char> = r###"
+            let a=(b+c)-d*e/(f+$);
+        "###
+        .chars()
+        .collect();
+
+        let result = Lexer::new(program).get_tokens();
+        let expected = vec![
+            Token::Let,
+            Token::Identifier('a'.to_string()),
+            Token::Eq,
+            Token::LParen,
+            Token::Identifier('b'.to_string()),
+            Token::Add,
+            Token::Identifier('c'.to_string()),
+            Token::RParen,
+            Token::Sub,
+            Token::Identifier('d'.to_string()),
+            Token::Mult,
+            Token::Identifier('e'.to_string()),
+            Token::Div,
+            Token::LParen,
+            Token::Identifier('f'.to_string()),
+            Token::Add,
+            Token::Misc('$'),
+            Token::RParen,
+            Token::EOL,
+            Token::EOF,
         ];
         assert_eq!(result, expected)
     }
     #[test]
     fn lexer_reads_def_and_impl() {
         let program: Vec<char> = r###"
-            def hello()
-            a=b+c
+        def hello() {
+            let a = b + c;
+        }
         "###
         .chars()
         .collect();
@@ -186,14 +243,18 @@ mod lexer_tests {
         let expected = vec![
             Token::Def,
             Token::Identifier("hello".to_string()),
-            Token::Misc('('),
-            Token::Misc(')'),
+            Token::LParen,
+            Token::RParen,
+            Token::LBrace,
+            Token::Let,
             Token::Identifier("a".to_string()),
-            Token::Misc('='),
+            Token::Eq,
             Token::Identifier("b".to_string()),
-            Token::Misc('+'),
+            Token::Add,
             Token::Identifier("c".to_string()),
-            Token::Eof,
+            Token::EOL,
+            Token::RBrace,
+            Token::EOF,
         ];
         assert_eq!(result, expected)
     }
@@ -201,23 +262,28 @@ mod lexer_tests {
     #[test]
     fn lexer_reads_numbers() {
         let program: Vec<char> = r###"
-            def hello()
-            a=45+69.2
+        def hellodef() {
+            let a = 45 + 69.2;
+        }
         "###
         .chars()
         .collect();
         let result = Lexer::new(program).get_tokens();
         let expected = vec![
             Token::Def,
-            Token::Identifier("hello".to_string()),
-            Token::Misc('('),
-            Token::Misc(')'),
+            Token::Identifier("hellodef".to_string()),
+            Token::LParen,
+            Token::RParen,
+            Token::LBrace,
+            Token::Let,
             Token::Identifier("a".to_string()),
-            Token::Misc('='),
+            Token::Eq,
             Token::Number(45f32),
-            Token::Misc('+'),
+            Token::Add,
             Token::Number(69.2),
-            Token::Eof,
+            Token::EOL,
+            Token::RBrace,
+            Token::EOF,
         ];
         assert_eq!(result, expected)
     }
@@ -225,13 +291,12 @@ mod lexer_tests {
     #[should_panic]
     fn lexer_hates_weird_numbers() {
         let program: Vec<char> = r###"
-            def hello()
-            a=45+69.2.3
+        def hello() {
+            let a = 45 + 69.2.3;
+        }
         "###
         .chars()
         .collect();
         let _ = Lexer::new(program).get_tokens();
     }
-
-
 }
