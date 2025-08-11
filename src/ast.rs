@@ -1,7 +1,8 @@
 use crate::token::Token;
+use std::cmp::PartialEq;
 use std::fmt::Debug;
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Expression {
     Literal(f64),
     Variable(String),
@@ -15,26 +16,26 @@ pub enum Expression {
         args: Vec<Expression>,
     },
 }
-#[derive(Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Prototype {
     name: String,
     args: Vec<String>,
 }
-#[derive(Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Function {
     proto: Prototype,
     body: Program,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Program {
     pub statements: Vec<Statement>,
     pub functions: Vec<Function>,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Statement {
     Let { name: String, value: Expression },
-    Expr(Expression),
+    Expression(Expression),
     Return(Expression),
 }
